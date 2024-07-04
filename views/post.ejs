@@ -1,0 +1,20 @@
+<%- include("./partials/header.ejs") %>
+
+<div class="viewPost">
+    <h1 class="post title "><%=postData.postTitle %></h1>
+
+    <h2 class="post author"> By - <%= postData.Author %> </h2>
+    <!-- <p><%#postData.blogImageName%></p> -->
+    
+    
+
+    <% if(postData.hasOwnProperty("blogImageName")){ %>
+    <img class="post blogImage " src="/data/uploads/<%=postData.blogImageName%>" alt="blog Image">
+    <% } %>
+    <p class="post content"> <%= postData.PostContent %> </p>
+    
+</div>
+
+
+<%- include("./partials/footer.ejs") %>
+<!-- locals.postData.blogImageName -->

@@ -1,0 +1,41 @@
+
+<%- include("./partials/header.ejs") %>
+
+<form action="/addPost" enctype="multipart/form-data" method="POST" class="createPostForm">
+    <div class="createPostFormDivs">
+        
+      <label for="Post-title">Add Post Title </label>
+      <input type="text" class="form-control" name="postTitle" placeholder="Ex : What is life all about?" required>
+    </div>
+
+
+    <div class="createPostFormDivs">
+
+    <label for="Author">Post By:</label>
+    <input type="text" class="form-control" name="Author" placeholder="Author Name" required>
+    </div>
+
+
+      <div class="createPostFormDivs">
+        <label for="AddImage">Add Image for the blog : </label>
+        <input type="file" name="blogImage" ><br>
+      </div>
+
+      <div class="createPostFormDivs">
+        <label for="Enter-Password">Enter your Post Password</label>
+        <input type="password" name="postPassword" placeholder="password">
+      </div>
+    
+  
+    <div class="createPostFormDivs">
+      <label for="PostContent">Write blog :</label>
+      <textarea class="form-control" name="PostContent" rows="3" placeholder="Start Writing your blog!"></textarea>
+    </div>
+
+     <input type="submit" value="Add Post">
+
+   
+  </form>
+ 
+
+  <%- include("./partials/footer.ejs") %>

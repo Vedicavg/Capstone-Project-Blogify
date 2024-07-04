@@ -1,0 +1,12 @@
+
+#viewPostCards {
+    margin-top: 2em;
+    text-align: center;
+}
+.card:hover{
+    border-color: #A4D4B4;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(164, 212, 180, 0.6);
+}
+
+
+
