@@ -1,0 +1,43 @@
+
+<%- include("./partials/header.ejs") %>
+
+<form action="/postUpdated?key=<%= postData.key%>"  method="POST" class="createPostForm">
+    <div class="createPostFormDivs">
+        
+      <label for="Post-title">Post title : <%= postData.postTitle %> </label>
+      <!-- <input type="text" class="form-control" name="postTitle" placeholder="Ex : What is life all about?" required> -->
+    </div>
+
+
+    <div class="createPostFormDivs">
+
+    <label for="Author">Post By :<%=postData.Author%></label>
+    <!-- <input type="text" class="form-control" name="Author" placeholder="Author Name" required> -->
+    </div>
+
+
+    <% if(postData.hasOwnProperty("blogImageName")){ %>
+      <div class="createPostFormDivs">
+
+            <img class="card-img-top" id="update-post-pageImg" src="/data/uploads/<%=postData.blogImageName%>" alt="Card image cap">
+            </div>
+        <% } %>
+
+      <!-- <div class="createPostFormDivs">
+        <label for="Enter-Password">Enter your Post Password</label>
+        <input type="password" name="postPassword" placeholder="password">
+      </div> -->
+    
+  
+    <div class="createPostFormDivs">
+      <label for="PostContent">Edit blog :</label>
+      <textarea class="form-control" name="editedPostContent" rows="3" placeholder="Start Editing your blog!"><%= postData.PostContent %></textarea>
+    </div>
+
+     <input type="submit" value="Edit Post">
+
+   
+  </form>
+ 
+
+  <%- include("./partials/footer.ejs") %>

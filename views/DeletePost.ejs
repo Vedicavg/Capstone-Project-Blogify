@@ -1,0 +1,38 @@
+<%- include("./partials/header.ejs") %>
+
+<h1 style="text-align: center;">Select the post to be deleted.</h1>
+    <div id="viewPostCards" >
+      <div class="container">
+          <div class="row ">
+
+      <% for(var i=0;i<postData.length;i++) { %>
+        <% if(postData[i].hasOwnProperty('key')){ %>
+          <div class="col-sm-4 viewPostCard my-4">
+            <a href="/delete?key=<%= postData[i].key %>">
+              <div class="card viewPostCard h-100">
+
+                <% if(postData[i].hasOwnProperty("blogImageName")){ %>
+
+                  <img class="card-img-top" src="/data/uploads/<%=postData[i].blogImageName%>" alt="Card image cap">
+                  <% } %>
+                    <div class="card-body">
+                      <p class="card-text">
+                        <%= postData[i].postTitle %>
+                      </p>
+                    </div>
+
+              </div>
+
+            </a>
+          </div>
+
+          <% } %>
+            <% } %>
+
+  
+          </div>
+
+        </div>
+
+    </div>
+    <%- include("./partials/footer.ejs") %>
