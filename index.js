@@ -5,9 +5,14 @@ import mongoose from "mongoose";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-
+import dotenv from "dotenv";
+dotenv.config(); // This loads the .env file
 // Set up Mongoose and MongoDB connection
-mongoose.connect('mongodb://localhost:27017/blogDB');
+const dbURI = process.env.MONGODB_URI;
+
+mongoose.connect(dbURI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('Error connecting to MongoDB', err));
 
 const postSchema = new mongoose.Schema({
     postTitle: String,
