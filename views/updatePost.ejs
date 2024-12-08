@@ -5,30 +5,30 @@
       <div class="container">
           <div class="row ">
 
-      <% for(var i=0;i<postData.length;i++) { %>
-        <% if(postData[i].hasOwnProperty('key')){ %>
-          <div class="col-sm-4 viewPostCard my-4">
-            <a href="/update?key=<%= postData[i].key %>">
-              <div class="card viewPostCard h-100">
-
-                <% if(postData[i].hasOwnProperty("blogImageName")){ %>
-
-                  <img class="card-img-top" src="/data/uploads/<%=postData[i].blogImageName%>" alt="Card image cap">
-                  <% } %>
-                    <div class="card-body">
-                      <p class="card-text">
-                        <%= postData[i].postTitle %>
-                      </p>
-                    </div>
-
-              </div>
-
-            </a>
-          </div>
-
-          <% } %>
-            <% } %>
-
+            <% postData.forEach(function(post) { %>
+              <% const post_id = post._id.toString()%>
+              <% if(post._id) { %>
+                  <div class="col-sm-4 viewPostCard my-4">
+                      <a href='/update?id=<%=post_id%>'>
+                          <div class="card viewPostCard h-100">
+          
+                              <% if(post.hasOwnProperty("blogImageName")) { %>
+                                  <img class="card-img-top" src=<%"/data/uploads/"+post.blogImageName %> alt="Card image cap">
+                              <% } else { %>
+                                  <img class="card-img-top" src="/default-image.jpg" alt="Default image">
+                              <% } %>
+          
+                              <div class="card-body">
+                                  <h5 class="card-title"><%= post.postTitle %></h5>
+                                  <p class="card-text"><%= post.Author %></p>
+                                  <p class="card-text"><%= post.PostContent.substring(0, 100) %>...</p> <!-- Displaying a shortened version of PostContent -->
+                              </div>
+                          </div>
+                      </a>
+                  </div>
+              <% } %>
+          <% }); %>
+          
   
           </div>
 

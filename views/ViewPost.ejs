@@ -19,30 +19,29 @@
       <div class="container">
           <div class="row ">
          
-      <% for(var i=0;i<postData.length;i++) { %>
-        <% if(postData[i].hasOwnProperty('key')){ %>
-          <div class="col-sm-4 viewPostCard my-4">
-            <a href="/post?key=<%= postData[i].key %>" >
-              <div class="card viewPostCard h-100 ">
+            <% postData.forEach(function(post) { %>
+  <div class="col-sm-4 viewPostCard my-4">
+    <a href="/post?id=<%= post._id %>">
+      <div class="card viewPostCard h-100">
 
-                <% if(postData[i].hasOwnProperty("blogImageName")){ %>
+        <% if(post.hasOwnProperty("blogImageName")) { %>
+          <img class="card-img-top" src='/data/uploads/<%= post.blogImageName %>' alt="Card image cap">
+        <% } else { %>
+          <img class="card-img-top" src="/default-image.jpg" alt="Default image">
+        <% } %>
 
-                  <img class="card-img-top" src="/data/uploads/<%=postData[i].blogImageName%>" alt="Card image cap">
-                  <% } %>
-                    <div class="card-body">
-                      <p class="card-text">
-                        <%= postData[i].postTitle %>
-                      </p>
-                    </div>
+        <div class="card-body">
+          <h5 class="card-title"><%= post.postTitle %></h5>
+          <p class="card-text"><%= post.Author %></p>
+          <p class="card-text"><%= post.PostContent.substring(0, 100) %>...</p>
+        </div>
+      </div>
+    </a>
+  </div>
+<% }); %>
 
-              </div>
-
-            </a>
-          </div>
-
-          <% } %>
-            <% } %>
-
+            
+            
   
           </div>
 

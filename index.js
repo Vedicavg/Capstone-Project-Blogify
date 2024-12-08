@@ -1,10 +1,23 @@
 import express from "express";
 import bodyParser from "body-parser";
-import fs from 'fs';
-import { readFileSync } from 'fs';
-import multer from 'multer';
+import multer from "multer";
+import mongoose from "mongoose";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
+
+// Set up Mongoose and MongoDB connection
+mongoose.connect('mongodb://localhost:27017/blogDB');
+
+const postSchema = new mongoose.Schema({
+    postTitle: String,
+    PostContent: String,
+    Author: String,
+    blogImageName: String
+});
+
+const Post = mongoose.model('Post', postSchema);
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const storage = multer.diskStorage({
@@ -18,361 +31,183 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-
 const app = express();
 const port = 2000;
-//key to keep note of the blogPost so that we can view 
-var postKeys = convertTxtToArray('./posts titles/postKeys.txt');
-
-
 
 app.use(express.static("public"));
-
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// MongoDB operations to replace JSON file operations
 
-function deleteImageFile(file_to_delete)
-{
-    
-    fs.unlink(file_to_delete , (err) => {
-        if (err) {
-          console.error(err);
-          return;
-        }
-        console.log('File deleted successfully');
-      });
-      
+// Function to find all posts
+function findAllPosts() {
+    return Post.find().exec();
 }
 
-
-
-function convertTxtToArray(path) {
-    const readFileLinesSync = readFileSync(path, 'UTF8').toString().split('\n');
-    return readFileLinesSync.map(line => parseInt(line.trim(), 10)).filter(Number.isInteger);
-}
-
-function readJsonFile(path) {
-    let blogPosts;
-    try {
-        const fileData = readFileSync(path, 'UTF8');
-        blogPosts = fileData ? JSON.parse(fileData) : [];
-    } catch (err) {
-        if (err.code === 'ENOENT') {
-            // File does not exist, initialize with an empty array
-            blogPosts = [];
-        } else {
-            console.error("Error reading or parsing file:", err);
-            throw err;
-        }
-    }
-    return blogPosts;
-}
-
-function writingToJsonFile(path, data) {
-
-    let blogPosts;
-
-    // STEP 1: Reading JSON file
-    try {
-        const fileData = readFileSync(path, 'UTF8');
-        blogPosts = fileData ? JSON.parse(fileData) : [];
-    } catch (err) {
-        if (err.code === 'ENOENT') {
-            // File does not exist, initialize with an empty array
-            blogPosts = [];
-        } else {
-            console.error("Error reading or parsing file:", err);
-            throw err;
-        }
-    }
-
-    // const fileData= readJsonFile(path);
-
-    // STEP 2: Adding new data to blogPosts object 
-    blogPosts.push(data);
-
-    // STEP 3: Writing to a file 
-    fs.writeFile(
-        path,
-        JSON.stringify(blogPosts, null, 2),
-        err => {
-            // Checking for errors 
-            if (err) {
-                console.error("Error writing file:", err);
-                throw err;
-            }
-
-            // Success 
-            console.log("Done writing");
-        }
-    );
-}
-
-function removeFromJsonFile(data,postKey,path)
-{   
-    delete data[postKey].key;
-    delete data[postKey].postTitle;
-    delete data[postKey].postPassword;
-    delete data[postKey].PostContent;
-    delete data[postKey].Author;
-    //delete Image from directory
-    var imgPath= __dirname+'/public/data/uploads/'+data[postKey].blogImageName;
-    deleteImageFile(imgPath);
-    delete data[postKey].blogImageName;
-    
-      
-
-    fs.writeFile(
-        path,
-        JSON.stringify(data, null, 2),
-        err => {
-            // Checking for errors 
-            if (err) {
-                console.error("Error writing file:", err);
-                throw err;
-            }
-
-            // Success 
-            console.log("Done writing");
-        }
-    );
-}
-
-
-function postContent(data) {
-    console.log(data);
-
-    appendInNewLineInFile(data.postTitle, "./posts titles/postTitles.txt");//successfull
-
-    if (postKeys.length === 0) {
-        var lastPostKey = 1;
-    }
-    else {
-        var lastPostKey = postKeys[postKeys.length - 1] + 1;
-    }
-
-    if (lastPostKey == null) {
-        lastPostKey = 1;
-    }
-    //push in array
-    postKeys.push(lastPostKey);
-    //append in postKeys
-    appendInNewLineInFile(lastPostKey, "./posts titles/postKeys.txt");
-
-    //add a json file having the object data file name titled postTitle
-
-    data.key = lastPostKey;
-    console.log("data to be written in json file ", data);
-    writingToJsonFile('./blogPosts/postContent.json', data);
-
-
-
-}
-
-
-
-
-//to write post titles in Posts title to find the post to view
-function appendInNewLineInFile(data, path) {
-    fs.open(path, 'a', 666, function (e, id) {
-        fs.write(id, data + "\n", null, 'utf8', function () {
-            fs.close(id, function () {
-                console.log('file is updated');
-            });
-        });
+// Function to add a new post
+async function addPost(data) {
+    const newPost = new Post({
+        postTitle: data.postTitle,
+        PostContent: data.PostContent,
+        Author: data.Author,
+        blogImageName: data.blogImageName
     });
+
+    await newPost.save();
+    return newPost;
+}
+
+// Function to delete a post
+async function deletePost(postId) {
+    const post = await Post.findById(postId).exec();
+    if (post) {
+        // Check if blogImageName exists before attempting to delete the image
+        if (post.blogImageName) {
+            const imgPath = `${__dirname}/public/data/uploads/${post.blogImageName}`;
+            try {
+                fs.unlinkSync(imgPath); // Delete image
+                console.log(`Deleted image: ${imgPath}`);
+            } catch (err) {
+                console.error("Error deleting image:", err);
+            }
+        }
+
+        // Delete the post from the database
+        await Post.deleteOne({ _id: postId }).exec();
+        return true;
+    }
+    return false;
 }
 
 
+// Function to update a post
+async function updatePost(postId, updatedData) {
+    const post = await Post.findById(postId).exec();
+    if (post) {
+        // Update fields conditionally
+        post.postTitle = updatedData.postTitle || post.postTitle;
+        post.PostContent = updatedData.PostContent || post.PostContent;
+        post.Author = updatedData.Author || post.Author;
 
+        // Save the updated post
+        await post.save();
+        return post;
+    }
+    return null; // Return null if post not found
+}
 
 app.get('/', (req, res) => {
-
     res.render("index.ejs");
 });
 
 app.get('/createPost', (req, res) => {
     res.render("createPost.ejs");
-})
+});
 
-app.get('/ViewPost', (req, res) => {
+app.get('/ViewPost', async (req, res) => {
+    try {
+        const posts = await findAllPosts();  // Ensure posts are fetched properly
+        // console.log(posts);
+        res.render("ViewPost.ejs", { postData: posts });
+    } catch (err) {
+        console.error("Error fetching posts:", err);
+        res.status(500).send("Error fetching posts from the database.");
+    }
+});
 
-    let data = readJsonFile("blogPosts/postContent.json");
-    res.render("ViewPost.ejs", { postData: data });
-})
-
-app.get('/post', function (req, res) {
-
-    let data = readJsonFile("blogPosts/postContent.json");
-
-    var postKey = req.query.key;
-    console.log(postKey);
-    postKey -= 1;
-
-   
-
-    var imgPath = "../blogPosts/data/uploads/" + data.blogImageName
-    if (postKey >= 0 && postKey < data.length) {
-        res.render("post.ejs", { postData: data[postKey] });
-        console.log(postKey, data[postKey]);
+app.get('/post', async (req, res) => {
+    const postId = req.query.id; // Using _id from the query string
+    const post = await Post.findById(postId).exec(); // Find post by _id
+    if (post) {
+        res.render("post.ejs", { postData: post });
     } else {
-        // Handle invalid postKey (e.g., redirect to an error page)
         res.redirect('/error');
     }
-
 });
 
-app.get('/DeletePost', function (req, res) {
-
-    let data = readJsonFile("blogPosts/postContent.json");
-    res.render("DeletePost.ejs", { postData: data });
-
+app.get('/DeletePost', async (req, res) => {
+    const posts = await findAllPosts();
+    res.render("DeletePost.ejs", { postData: posts });
 });
 
-app.get('/delete', function (req, res) {
-
-    let data = readJsonFile("blogPosts/postContent.json");
-
-    console.log(req.body);
-    console.log(req.query.key);
-    let postKey = req.query.key;
-    let objIndex;
-    data.some((dataKey, dataValue) => {
-        if (dataKey.key == postKey) {
-            objIndex = dataValue;
-            return true;
-        }
-    });
-
-
-    res.render("postPassword.ejs", { postData: data[objIndex] });
-
-});
-
-app.post('/delete-post', (req, res) => {
-
-
-    let data = readJsonFile("blogPosts/postContent.json");
-    console.log(req.body.password);
-    let key = req.query.key;
-    key -= 1;
-    console.log(key);
-    console.log("data[key].postPassword", data[key].postPassword);
-    if(req.body.password===data[key].postPassword)
-        {   
-            removeFromJsonFile(data,key,"blogPosts/postContent.json");
-            res.send("<h1>Post successfully deleted</h1>");
-
-        }
-    else{
-        res.send("<h1>Enter correct password!</h1>");
+app.get('/delete', async (req, res) => {
+    const postId = req.query.id; // Using _id from the query string
+    const post = await Post.findById(postId).exec();
+    if (post) {
+        res.render("postPasswordDelete.ejs", { postData: post });
+    } else {
+        res.redirect('/error');
     }
-
-
 });
 
+app.get('/delete-post', async (req, res) => {
+    const postId = req.query.id; // Using _id from the query string
+    const success = await deletePost(postId);
+    if (success) {
+        res.send("<h1>Post successfully deleted</h1>");
+    } else {
+        res.send("<h1>Error in deleting post!</h1>");
+    }
+});
 
-
-
-app.post('/addPost', upload.single('blogImage'), (req, res) => {
-
-    //for the written content
-    let data = req.body;
-    let fileData=req.file;
-    if(fileData)
-        {
-            data.blogImageName = req.file.filename;
-        }
-    
+app.post('/addPost', upload.single('blogImage'), async (req, res) => {
+    const data = req.body;
     console.log(data);
-    postContent(req.body);
-    res.redirect("/ViewPost");
-
-
-});
-
-app.get('/updatePost',function(req,res){
-    let data = readJsonFile("blogPosts/postContent.json");
-    res.render("updatePost.ejs", { postData: data });
-});
-
-app.get('/update', function (req, res) {
-
-    let data = readJsonFile("blogPosts/postContent.json");
-
-    console.log(req.body);
-    console.log(req.query.key);
-    let postKey = req.query.key;
-    let objIndex;
-    data.some((dataKey, dataValue) => {
-        if (dataKey.key == postKey) {
-            objIndex = dataValue;
-            return true;
-        }
-    });
-
-
-    res.render("postPasswordUpdate.ejs", { postData: data[objIndex] });
-
-});
-
-app.post('/update-post-page', (req, res) => {
-
-
-    let data = readJsonFile("blogPosts/postContent.json");
-    console.log(req.body.password);
-    let key = req.query.key;
-    key -= 1;
-    console.log(key);
-    console.log("data[key].postPassword", data[key].postPassword);
-    if(req.body.password===data[key].postPassword)
-        {   
-            res.render("update-post-page.ejs",{postData:data[key]});
-
-        }
-    else{
-        res.send("<h1>Enter correct password!</h1>");
+    if (req.file) {
+        data.blogImageName = req.file.filename;
     }
 
-
+    const newPost = await addPost(data);
+    res.redirect("/ViewPost");
 });
 
-app.post("/postUpdated",(req,res)=>{
-
-    let postKey = req.query.key;
-    let data = readJsonFile("blogPosts/postContent.json");
-    let objIndex;
-    data.some((dataKey, dataValue) => {
-        if (dataKey.key == postKey) {
-            objIndex = dataValue;
-            return true;
-        }
-    });
-    console.log(postKey);
-    console.log(objIndex);
-    console.log(req.body.editedPostContent);
-    data[objIndex].PostContent=req.body.editedPostContent;
-    let jsonFilePath ='./blogPosts/postContent.json';
-    fs.writeFile(
-        jsonFilePath,
-        JSON.stringify(data, null, 2),
-        err => {
-            // Checking for errors 
-            if (err) {
-                console.error("Error writing file:", err);
-                throw err;
-            }
-
-            // Success 
-            console.log("Done writing");
-        res.redirect("/ViewPost");
-        }
-        
-    );
-
-
+app.get('/updatePost', async (req, res) => {
+    const posts = await findAllPosts();
+    // console.log(posts);
+    res.render("updatePost.ejs", { postData: posts });
 });
+
+app.get('/update', async (req, res) => {
+    const postId = req.query.id; // Using _id from the query string
+    const post = await Post.findById(postId).exec();
+    if (post) {
+        res.render("update-post-page.ejs", { postData: post });
+    } else {
+        res.redirect('/error');
+    }
+});
+
+app.post("/postUpdated", async (req, res) => {
+    const postId = req.query.id; // Extract post ID from the query string
+    const { editedPostContent } = req.body;  // Extract edited content from request body
+
+    // Ensure the post ID and edited content are available
+    if (!postId || !editedPostContent) {
+        return res.status(400).send("Post ID or content is missing");
+    }
+
+    try {
+        // Prepare the updated data object
+        const updatedData = {
+            PostContent: editedPostContent  // Only updating the content here
+        };
+
+        // Call updatePost function to update the post in the database
+        const updatedPost = await updatePost(postId, updatedData);
+
+        // Check if the update was successful
+        if (updatedPost) {
+            res.redirect("/ViewPost");  // Redirect to view all posts after successful update
+        } else {
+            res.send("<script>alert('Error in updating post')</script>");
+        }
+    } catch (error) {
+        console.error('Error updating post:', error);
+        res.status(500).send("Error updating the post");
+    }
+});
+
 
 app.listen(port, () => {
-    console.log(`Server is running at ${port}`);
+    console.log(`Server is running at http://localhost:${port}`);
 });

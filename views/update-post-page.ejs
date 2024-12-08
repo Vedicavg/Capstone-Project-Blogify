@@ -1,7 +1,7 @@
 
 <%- include("./partials/header.ejs") %>
 
-<form action="/postUpdated?key=<%= postData.key%>"  method="POST" class="createPostForm">
+<form action="/postUpdated?id=<%= postData._id%>"  method="POST" class="createPostForm">
     <div class="createPostFormDivs">
         
       <label for="Post-title">Post title : <%= postData.postTitle %> </label>
